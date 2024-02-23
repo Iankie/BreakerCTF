@@ -1,6 +1,6 @@
 # BreakerCTF
 ### Solved Tasks
 #### [Crypto](https://github.com/Iankie/BreakerCTF/tree/main/Crypto) 
-#### Web 
-#### Misc 
-#### Reverse 
+#### [Web](https://github.com/Iankie/BreakerCTF/tree/main/Web) 
+#### [Misc](https://github.com/Iankie/BreakerCTF/tree/main/Misc) 
+#### [Reverse](https://github.com/Iankie/BreakerCTF/tree/main/Reverse)
